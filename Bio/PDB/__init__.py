@@ -13,6 +13,7 @@ Author: Thomas Hamelryck.  Additional code by Kristian Rother.
 
 # Get a Structure object from a PDB file
 from .PDBParser import PDBParser
+from .PQRParser import PQRParser
 
 from .MMCIFParser import MMCIFParser
 from .MMCIFParser import FastMMCIFParser

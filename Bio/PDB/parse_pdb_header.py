@@ -172,7 +172,7 @@ def _parse_pdb_header_list(header):
             head = _chop_end_misc(tail).lower()
             dict['head'] = head
         elif key == "COMPND":
-            tt = re.sub("\;\s*\Z", "", _chop_end_codes(tail)).lower()
+            tt = re.sub("\;\s*\Z", "", _chop_end_codes(tail))
             # look for E.C. numbers in COMPND lines
             rec = re.search('\d+\.\d+\.\d+\.\d+', tt)
             if rec:
@@ -180,8 +180,10 @@ def _parse_pdb_header_list(header):
                 tt = re.sub("\((e\.c\.)*\d+\.\d+\.\d+\.\d+\)", "", tt)
             tok = tt.split(":")
             if len(tok) >= 2:
-                ckey = tok[0]
+                ckey = tok[0].lower()
                 cval = re.sub("\A\s*", "", tok[1])
+                if ckey != 'chain':
+                    cval = cval.lower()
                 if ckey == 'mol_id':
                     dict['compound'][cval] = {'misc': ''}
                     comp_molid = cval
