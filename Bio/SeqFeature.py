@@ -1,6 +1,6 @@
 # Copyright 2000-2003 Jeff Chang.
 # Copyright 2001-2008 Brad Chapman.
-# Copyright 2005-2015 by Peter Cock.
+# Copyright 2005-2016 by Peter Cock.
 # Copyright 2006-2009 Michiel de Hoon.
 # All rights reserved.
 # This code is part of the Biopython distribution and governed by its
@@ -54,6 +54,8 @@ classes:
 
 from __future__ import print_function
 
+from collections import OrderedDict
+
 from Bio._py3k import _is_int_or_long
 
 from Bio.Seq import MutableSeq, reverse_complement
@@ -85,7 +87,7 @@ class SeqFeature(object):
         - qualifiers - A dictionary of qualifiers on the feature. These are
           analogous to the qualifiers from a GenBank feature table. The keys of
           the dictionary are qualifier names, the values are the qualifier
-          values.
+          values. As of Biopython 1.69 this is an ordered dictionary.
     """
 
     def __init__(self, location=None, type='', location_operator='',
@@ -150,7 +152,7 @@ class SeqFeature(object):
             self.strand = strand
         self.id = id
         if qualifiers is None:
-            qualifiers = {}
+            qualifiers = OrderedDict()
         self.qualifiers = qualifiers
         if sub_features is not None:
             raise TypeError("Rather than sub_features, use a CompoundFeatureLocation")
@@ -271,7 +273,7 @@ class SeqFeature(object):
                           type=self.type,
                           location_operator=self.location_operator,
                           id=self.id,
-                          qualifiers=dict(self.qualifiers.items()))
+                          qualifiers=OrderedDict(self.qualifiers.items()))
 
     def _flip(self, length):
         """Returns a copy of the feature with its location flipped (PRIVATE).
@@ -287,7 +289,7 @@ class SeqFeature(object):
                           type=self.type,
                           location_operator=self.location_operator,
                           id=self.id,
-                          qualifiers=dict(self.qualifiers.items()))
+                          qualifiers=OrderedDict(self.qualifiers.items()))
 
     def extract(self, parent_sequence):
         """Extract feature sequence from the supplied parent sequence.
@@ -747,14 +749,14 @@ class FeatureLocation(object):
         """
         if isinstance(other, FeatureLocation):
             return CompoundLocation([self, other])
-        elif isinstance(other, int):
+        elif _is_int_or_long(other):
             return self._shift(other)
         else:
             # This will allow CompoundLocation's __radd__ to be called:
             return NotImplemented
 
     def __radd__(self, other):
-        if isinstance(other, int):
+        if _is_int_or_long(other):
             return self._shift(other)
         else:
             return NotImplemented
@@ -799,7 +801,7 @@ class FeatureLocation(object):
         >>> [i for i in range(15) if i in loc]
         [5, 6, 7, 8, 9]
         """
-        if not isinstance(value, int):
+        if not _is_int_or_long(value):
             raise ValueError("Currently we only support checking for integer "
                              "positions being within a FeatureLocation.")
         if value < self._start or value >= self._end:
@@ -1115,7 +1117,7 @@ class CompoundLocation(object):
                 raise ValueError("Mixed operators %s and %s"
                                  % (self.operator, other.operator))
             return CompoundLocation(self.parts + other.parts, self.operator)
-        elif isinstance(other, int):
+        elif _is_int_or_long(other):
             return self._shift(other)
         else:
             raise NotImplementedError
@@ -1124,7 +1126,7 @@ class CompoundLocation(object):
         """Combine locations."""
         if isinstance(other, FeatureLocation):
             return CompoundLocation([other] + self.parts, self.operator)
-        elif isinstance(other, int):
+        elif _is_int_or_long(other):
             return self._shift(other)
         else:
             raise NotImplementedError

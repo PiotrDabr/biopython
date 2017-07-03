@@ -1,4 +1,4 @@
-# Copyright 2006-2016 by Peter Cock.  All rights reserved.
+# Copyright 2006-2017 by Peter Cock.  All rights reserved.
 # This code is part of the Biopython distribution and governed by its
 # license.  Please see the LICENSE file that should have been included
 # as part of this package.
@@ -8,8 +8,7 @@
 
 r"""Sequence input/output as SeqRecord objects.
 
-Bio.SeqIO is also documented at SeqIO_ and by
-a whole chapter in our tutorial:
+Bio.SeqIO is also documented at SeqIO_ and by a whole chapter in our tutorial:
 
   - `HTML Tutorial`_
   - `PDF Tutorial`_
@@ -34,6 +33,16 @@ gi|1592936|gb|G29385|G29385 471
 Note that the parse() function will invoke the relevant parser for the
 format with its default settings.  You may want more control, in which case
 you need to create a format specific sequence iterator directly.
+
+Some of these parsers are wrappers around low-level parsers which build up
+SeqRecord objects for the consistent SeqIO interface. In cases where the
+run-time is critical, such as large FASTA or FASTQ files, calling these
+underlying parsers will be much faster - in this case these generator
+functions which return tuples of strings:
+
+>>> from Bio.SeqIO.FastaIO import SimpleFastaParser
+>>> from Bio.SeqIO.QualityIO import FastqGeneralIterator
+
 
 Input - Single Records
 ----------------------
@@ -700,7 +709,7 @@ def to_dict(sequences, key_function=None):
     >>> print(sorted(id_dict))
     ['AF297471.1', 'AJ237582.1', 'L31939.1', 'M81224.1', 'X55053.1', 'X62281.1']
     >>> print(id_dict["L31939.1"].description)
-    Brassica rapa (clone bif72) kin mRNA, complete cds.
+    Brassica rapa (clone bif72) kin mRNA, complete cds
 
     A more complex example, using the key_function argument in order to
     use a sequence checksum as the dictionary key:

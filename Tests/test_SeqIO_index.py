@@ -1,4 +1,4 @@
-# Copyright 2009-2015 by Peter Cock.  All rights reserved.
+# Copyright 2009-2016 by Peter Cock.  All rights reserved.
 # This code is part of the Biopython distribution and governed by its
 # license.  Please see the LICENSE file that should have been included
 # as part of this package.
@@ -8,7 +8,7 @@
 try:
     import sqlite3
 except ImportError:
-    # Try to run what tests we can on Python 2.4 or Jython
+    # Try to run what tests we can on Jython
     # where we don't expect this to be installed.
     sqlite3 = None
 
@@ -20,7 +20,7 @@ import gzip
 import warnings
 from io import BytesIO
 
-from Bio._py3k import _as_bytes, _bytes_to_string, StringIO
+from Bio._py3k import _bytes_to_string, StringIO
 from Bio._py3k import _universal_read_mode
 
 try:
@@ -71,7 +71,7 @@ if sqlite3:
         """Open SQLite index and extract filenames (as is).
 
         Returns a 2-tuple, holding a list of strings, and the value
-        of the meta_data.filenames_relative_to_index (of None).
+        of the meta_data.filenames_relative_to_index (or None).
         """
         con = sqlite3.dbapi2.connect(index_filename)
 
@@ -454,7 +454,7 @@ class IndexDictTests(unittest.TestCase):
         # Make sure boolean evaluation works
         self.assertEqual(bool(keys), bool(rec_dict))
         for key, id in zip(keys, ids):
-            self.assertTrue(key in rec_dict)
+            self.assertIn(key, rec_dict)
             self.assertEqual(id, rec_dict[key].id)
             self.assertEqual(id, rec_dict.get(key).id)
         # Check non-existant keys,
@@ -469,20 +469,20 @@ class IndexDictTests(unittest.TestCase):
         if hasattr(dict, "iteritems"):
             # Python 2.x
             for key, rec in rec_dict.items():
-                self.assertTrue(key in keys)
+                self.assertIn(key, keys)
                 self.assertTrue(isinstance(rec, SeqRecord))
-                self.assertTrue(rec.id in ids)
+                self.assertIn(rec.id, ids)
         else:
             # Python 3
             assert not hasattr(rec_dict, "iteritems")
             for key, rec in rec_dict.items():
-                self.assertTrue(key in keys)
+                self.assertIn(key, keys)
                 self.assertTrue(isinstance(rec, SeqRecord))
-                self.assertTrue(rec.id in ids)
+                self.assertIn(rec.id, ids)
             for rec in rec_dict.values():
-                self.assertTrue(key in keys)
+                self.assertIn(key, keys)
                 self.assertTrue(isinstance(rec, SeqRecord))
-                self.assertTrue(rec.id in ids)
+                self.assertIn(rec.id, ids)
         # Check the following fail
         self.assertRaises(NotImplementedError, rec_dict.popitem)
         self.assertRaises(NotImplementedError, rec_dict.pop, chr(0))
@@ -514,21 +514,33 @@ class IndexDictTests(unittest.TestCase):
                 warnings.simplefilter('ignore', BiopythonParserWarning)
                 rec_dict = SeqIO.index(filename, format, alphabet,
                                        key_function=lambda x: x.lower())
+                rec_dict_db = SeqIO.index_db(":memory:", filename, format, alphabet,
+                                             key_function=lambda x: x.lower())
         else:
             rec_dict = SeqIO.index(filename, format, alphabet,
                                    key_function=lambda x: x.lower())
+            rec_dict_db = SeqIO.index_db(":memory:", filename, format, alphabet,
+                                         key_function=lambda x: x.lower())
 
         self.assertEqual(set(id_list), set(rec_dict))
+        self.assertEqual(set(id_list), set(rec_dict_db))
         self.assertEqual(len(id_list), len(rec_dict))
         for key in id_list:
-            self.assertTrue(key in rec_dict)
+            self.assertIn(key, rec_dict)
             self.assertEqual(key, rec_dict[key].id.lower())
             self.assertEqual(key, rec_dict.get(key).id.lower())
             raw = rec_dict.get_raw(key)
             self.assertTrue(isinstance(raw, bytes),
                             "Didn't get bytes from %s get_raw" % format)
             self.assertTrue(raw.strip())
-            self.assertTrue(raw in raw_file)
+            self.assertIn(raw, raw_file)
+
+            raw_db = rec_dict_db.get_raw(key)
+            # Via index using format-specific get_raw which scans the file,
+            # Via index_db in general using raw length found when indexing.
+            self.assertEqual(raw, raw_db,
+                             "index and index_db .get_raw() different for %s" % format)
+
             rec1 = rec_dict[key]
             # Following isn't very elegant, but it lets me test the
             # __getitem__ SFF code is working.
@@ -551,8 +563,8 @@ class IndexDictTests(unittest.TestCase):
                             rec_dict._proxy._alphabet,
                             trim=True)
             elif format == "uniprot-xml":
-                self.assertTrue(raw.startswith(_as_bytes("<entry ")))
-                self.assertTrue(raw.endswith(_as_bytes("</entry>")))
+                self.assertTrue(raw.startswith(b"<entry "))
+                self.assertTrue(raw.endswith(b"</entry>"))
                 # Currently the __getitem__ method uses this
                 # trick too, but we hope to fix that later
                 raw = """<?xml version='1.0' encoding='UTF-8'?>
@@ -604,8 +616,10 @@ tests = [
     ("EMBL/epo_prt_selection.embl", "embl", None),
     ("EMBL/U87107.embl", "embl", None),
     ("EMBL/TRBG361.embl", "embl", None),
+    ("EMBL/kipo_prt_sample.embl", "embl", None),
     ("EMBL/A04195.imgt", "embl", None),  # Not a proper EMBL file, an IMGT file
     ("EMBL/A04195.imgt", "imgt", None),
+    ("EMBL/hla_3260_sample.imgt", "imgt", None),
     ("EMBL/patents.embl", "embl", generic_protein),
     ("EMBL/AAA03323.embl", "embl", None),
     ("GenBank/NC_000932.faa", "fasta", generic_protein),

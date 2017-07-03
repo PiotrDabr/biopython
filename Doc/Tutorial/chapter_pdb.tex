@@ -50,9 +50,9 @@ The dictionary can also be created without creating a \texttt{Structure}
 object, ie. directly from the PDB file:
 
 \begin{verbatim}
->>> file = open(filename, 'r')
->>> header_dict = parse_pdb_header(file)
->>> file.close()
+>>> with open(filename, 'r') as handle:
+...     header_dict = parse_pdb_header(handle)
+...
 \end{verbatim}
 
 \subsection{Reading an mmCIF file}
@@ -100,7 +100,7 @@ You can use the direct MMTFParser to read a structure from a file:
 >>> structure = MMTFParser.get_structure("PDB/4CUP.mmtf")
 \end{verbatim}
 
-Or you can use the same class to get a structure by it's PDB ID:
+Or you can use the same class to get a structure by its PDB ID:
 %want online doctest here
 \begin{verbatim}
 >>> structure = MMTFParser.get_structure_from_url("4CUP")

@@ -37,6 +37,11 @@ Instead, we can do this under either Python 2 or 3:
 Once we drop support for Python 2, the whole of Bio._py3k will
 go away.
 """
+
+# From the point of view of pep8 and flake8, there are lots of issues with
+# this file. This line tells flake8 to ignore it for quality assurance:
+# flake8: noqa
+
 import sys
 
 
@@ -158,14 +163,11 @@ if sys.version_info[0] >= 3:
     # This is to avoid the deprecation warning from open(filename, "rU")
     _universal_read_mode = "r"  # text mode does universal new lines
 
-    # On Python 3, can depend on OrderedDict being present:
-    from collections import OrderedDict
-
     # On Python 3, this will be a unicode StringIO
     from io import StringIO
 
     # On Python 3 urllib, urllib2, and urlparse were merged:
-    from urllib.request import urlopen, Request, urlretrieve, urlparse
+    from urllib.request import urlopen, Request, urlretrieve, urlparse, urlcleanup
     from urllib.parse import urlencode, quote
     from urllib.error import HTTPError
 
@@ -212,17 +214,6 @@ else:
     # mode which include universal readlines mode
     _universal_read_mode = "rU"
 
-    try:
-        # Present on Python 2.7
-        from collections import OrderedDict
-    except ImportError:
-        try:
-            # Raymond Hettinger's backport available on PyPI
-            from ordereddict import OrderedDict
-        except ImportError:
-            # Use our bundled copy instead
-            from ._ordereddict import OrderedDict
-
     # On Python 2 this will be a (bytes) string based handle.
     # Note this doesn't work as it is unicode based:
     # from io import StringIO
@@ -233,7 +224,7 @@ else:
 
     # Under urllib.request on Python 3:
     from urllib2 import urlopen, Request
-    from urllib import urlretrieve
+    from urllib import urlretrieve, urlcleanup
     from urlparse import urlparse
 
     # Under urllib.parse on Python 3:

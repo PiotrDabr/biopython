@@ -226,7 +226,6 @@ def load_database(gb_filename_or_handle):
 
     This is useful for running tests against a newly created database.
     """
-
     TESTDB = create_database()
     # now open a connection to load the database
     db_name = "biosql-test"
@@ -249,7 +248,6 @@ def load_multi_database(gb_filename_or_handle, gb_filename_or_handle2):
 
     This is useful for running tests against a newly created database.
     """
-
     TESTDB = create_database()
     # now open a connection to load the database
     db_name = "biosql-test"
@@ -304,8 +302,8 @@ class MultiReadTest(unittest.TestCase):
     def test_server(self):
         """Check BioSeqDatabase methods"""
         server = self.server
-        self.assertTrue("biosql-test" in server)
-        self.assertTrue("biosql-test2" in server)
+        self.assertIn("biosql-test", server)
+        self.assertIn("biosql-test2", server)
         self.assertEqual(2, len(server))
         self.assertEqual(["biosql-test", 'biosql-test2'], list(server.keys()))
         # Check we can delete the namespace...
@@ -380,7 +378,7 @@ class ReadTest(unittest.TestCase):
     def test_server(self):
         """Check BioSeqDatabase methods"""
         server = self.server
-        self.assertTrue("biosql-test" in server)
+        self.assertIn("biosql-test", server)
         self.assertEqual(1, len(server))
         self.assertEqual(["biosql-test"], list(server.keys()))
         # Check we can delete the namespace...
@@ -467,7 +465,7 @@ class SeqInterfaceTest(unittest.TestCase):
         self.assertTrue(isinstance(test_record.seq, BioSeq.DBSeq))
         self.assertEqual(test_record.id, "X62281.1", test_record.id)
         self.assertEqual(test_record.name, "ATKIN2")
-        self.assertEqual(test_record.description, "A.thaliana kin2 gene.")
+        self.assertEqual(test_record.description, "A.thaliana kin2 gene")
         self.assertTrue(hasattr(test_record, 'annotations'))
         # XXX should do something with annotations once they are like
         # a dictionary
@@ -559,11 +557,11 @@ class SeqInterfaceTest(unittest.TestCase):
             raise KeyError("Missing expected entries, have %s"
                            % repr(cds_feature.qualifiers))
 
-        self.assertTrue("db_xref" in cds_feature.qualifiers)
+        self.assertIn("db_xref", cds_feature.qualifiers)
         multi_ann = cds_feature.qualifiers["db_xref"]
         self.assertEqual(len(multi_ann), 2)
-        self.assertTrue("GI:16354" in multi_ann)
-        self.assertTrue("SWISS-PROT:P31169" in multi_ann)
+        self.assertIn("GI:16354", multi_ann)
+        self.assertIn("SWISS-PROT:P31169", multi_ann)
 
 
 class LoaderTest(unittest.TestCase):
@@ -647,7 +645,7 @@ class DeleteTest(unittest.TestCase):
     def test_server(self):
         """Check BioSeqDatabase methods"""
         server = self.server
-        self.assertTrue("biosql-test" in server)
+        self.assertIn("biosql-test", server)
         self.assertEqual(1, len(server))
         self.assertEqual(["biosql-test"], list(server.keys()))
         # Check we can delete the namespace...
@@ -755,8 +753,11 @@ class DupLoadTest(unittest.TestCase):
 class ClosedLoopTest(unittest.TestCase):
     """Test file -> BioSQL -> file."""
 
-    # NOTE - For speed I don't bother to create a new database each time,
-    # simply a new unique namespace is used for each test.
+    @classmethod
+    def setUpClass(cls):
+        # NOTE - For speed I don't bother to create a new database each time,
+        # simply a new unique namespace is used for each test.
+        TESTDB = create_database()
 
     def test_NC_005816(self):
         """GenBank file to BioSQL and back to a GenBank file, NC_005816."""
@@ -968,14 +969,14 @@ class InDepthLoadTest(unittest.TestCase):
         test_record = self.db.lookup(accession="X55053")
         self.assertEqual(test_record.name, "ATCOR66M")
         self.assertEqual(test_record.id, "X55053.1")
-        self.assertEqual(test_record.description, "A.thaliana cor6.6 mRNA.")
+        self.assertEqual(test_record.description, "A.thaliana cor6.6 mRNA")
         self.assertTrue(isinstance(test_record.seq.alphabet, Alphabet.DNAAlphabet))
         self.assertEqual(str(test_record.seq[:10]), 'AACAAAACAC')
 
         test_record = self.db.lookup(accession="X62281")
         self.assertEqual(test_record.name, "ATKIN2")
         self.assertEqual(test_record.id, "X62281.1")
-        self.assertEqual(test_record.description, "A.thaliana kin2 gene.")
+        self.assertEqual(test_record.description, "A.thaliana kin2 gene")
         self.assertTrue(isinstance(test_record.seq.alphabet, Alphabet.DNAAlphabet))
         self.assertEqual(str(test_record.seq[:10]), 'ATTTGGCCTA')
 
@@ -1036,6 +1037,11 @@ class AutoSeqIOTests(unittest.TestCase):
 
     server = None
     db = None
+
+    @classmethod
+    def setUpClass(cls):
+        # Create and reuse on database for all tests in this class
+        TESTDB = create_database()
 
     def setUp(self):
         """Connect to the database."""

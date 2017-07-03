@@ -58,9 +58,14 @@ def UniprotIterator(handle, alphabet=Alphabet.ProteinAlphabet(), return_raw_comm
 
     if not hasattr(handle, "read"):
         if isinstance(handle, str):
+            import warnings
+            from Bio import BiopythonDeprecationWarning
+            warnings.warn("Passing an XML-containing handle is recommended",
+                          BiopythonDeprecationWarning)
             handle = StringIO(handle)
         else:
-            raise Exception('An XML-containing handler or an XML string must be passed')
+            raise TypeError("Requires an XML-containing handle"
+                            " (or XML as a string, but that's deprectaed)")
 
     if ElementTree is None:
         from Bio import MissingExternalDependencyError
@@ -108,7 +113,7 @@ class Parser(object):
             """Parse protein names (PRIVATE)."""
             descr_set = False
             for protein_element in element:
-                if protein_element.tag in [NS + 'recommendedName', NS + 'alternativeName']:  # recommendedName tag are parsed before
+                if protein_element.tag in [NS + 'recommendedName', NS + 'submittedName', NS + 'alternativeName']:  # recommendedName tag are parsed before
                     # use protein fields for name and description
                     for rec_name in protein_element:
                         ann_key = '%s_%s' % (protein_element.tag.replace(NS, ''),
@@ -211,7 +216,6 @@ class Parser(object):
                 "mass spectrometry"
                 "interaction"
             """
-
             simple_comments = ["allergen",
                                "biotechnology",
                                "biophysicochemical properties",
@@ -271,7 +275,7 @@ class Parser(object):
                         else:
                             start = int(list(loc_element.getiterator(NS + 'begin'))[0].attrib['position']) - 1
                             end = int(list(loc_element.getiterator(NS + 'end'))[0].attrib['position'])
-                    except ValueError:  # undefined positions or erroneously mapped
+                    except (ValueError, KeyError):  # undefined positions or erroneously mapped
                         pass
                 mass = element.attrib['mass']
                 method = element.attrib['method']
